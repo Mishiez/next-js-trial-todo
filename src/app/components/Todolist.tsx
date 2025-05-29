@@ -227,7 +227,7 @@ export default function Todolist() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-yellow-100 to-orange-200 p-4">
         <div className="bg-white p-8 rounded-3xl shadow-lg w-full max-w-md transform transition-shadow hover:shadow-xl">
-          <h2 className="text-2xl font-bold text-yellow-800 text-center mb-6">
+          <h2 className="text-2xl font-bold text-blue-900 text-center mb-6">
             Welcome Back!
           </h2>
           <div className="flex flex-col gap-4">
@@ -237,7 +237,7 @@ export default function Todolist() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               required
-              className="w-full p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors placeholder-black"
+              className="w-full p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors placeholder-blue-900 text-blue-900"
             />
             <input
               type="password"
@@ -245,7 +245,7 @@ export default function Todolist() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               required
-              className="w-full p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors placeholder-black"
+              className="w-full p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors placeholder-blue-900 text-blue-900"
             />
             <button
               onClick={handleLogin}
@@ -270,14 +270,14 @@ export default function Todolist() {
         </p>
         <button
           onClick={logout}
-          className="mt-4 bg-white text-orange-700 px-5 py-2 rounded-full border-none cursor-pointer hover:bg-yellow-100 hover:scale-105 transition-all"
+          className="mt-4 bg-white text-blue-900 px-5 py-2 rounded-full border-none cursor-pointer hover:bg-yellow-100 hover:scale-105 transition-all"
         >
           Log Out
         </button>
       </header>
 
       <main className="w-full max-w-2xl bg-white rounded-3xl shadow-md p-8 border border-yellow-100 transition-shadow hover:shadow-lg">
-        <h2 className="text-2xl font-bold text-yellow-800 text-center mb-8">
+        <h2 className="text-2xl font-bold text-blue-900 text-center mb-8">
           Your Projects & Tasks
         </h2>
 
@@ -288,7 +288,7 @@ export default function Todolist() {
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
               placeholder="Add a new project..."
-              className="flex-1 p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors placeholder-black"
+              className="flex-1 p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors placeholder-black text-gray-900"
             />
             <button
               onClick={addProject}
@@ -307,7 +307,7 @@ export default function Todolist() {
             <select
               value={selectedProjectIndex ?? ''}
               onChange={(e) => setSelectedProjectIndex(e.target.value ? parseInt(e.target.value) : null)}
-              className="flex-1 p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors"
+              className="flex-1 p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors text-blue-900"
             >
               <option value="">Select a project</option>
               {projects.map((project, index) => (
@@ -322,7 +322,7 @@ export default function Todolist() {
               onChange={(e) => setNewTask(e.target.value)}
               placeholder="Add a new task..."
               disabled={selectedProjectIndex === null}
-              className={`flex-1 p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors placeholder-black ${
+              className={`flex-1 p-4 border border-yellow-200 rounded-xl outline-none focus:border-yellow-400 transition-colors placeholder-black text-gray-900 ${
                 selectedProjectIndex === null ? 'opacity-50 cursor-not-allowed' : 'cursor-text'
               }`}
             />
@@ -341,7 +341,7 @@ export default function Todolist() {
         </div>
 
         {projects.length === 0 ? (
-          <p className="text-yellow-600 text-center p-6 bg-yellow-100 rounded-xl">
+          <p className="text-blue-900 text-center p-6 bg-yellow-100 rounded-xl">
             No projects yet! Start by adding one above.
           </p>
         ) : (
@@ -360,7 +360,7 @@ export default function Todolist() {
                   />
                   <h3
                     className={`text-xl font-semibold ${
-                      project.completed ? 'text-gray-400 line-through' : 'text-brown-800'
+                      project.completed ? 'text-gray-400 line-through' : 'text-black'
                     }`}
                   >
                     {project.name}
@@ -374,7 +374,7 @@ export default function Todolist() {
                 </button>
               </div>
               {project.tasks.length === 0 ? (
-                <p className="text-yellow-700 italic text-center">
+                <p className="text-blue-900 italic text-center">
                   No tasks yet. Add some above!
                 </p>
               ) : (
@@ -392,7 +392,7 @@ export default function Todolist() {
                           className="h-5 w-5 accent-green-600 border-yellow-200 rounded"
                         />
                         <span
-                          className={task.completed ? 'text-gray-400 line-through' : 'text-brown-800'}
+                          className={task.completed ? 'text-gray-400 line-through' : 'text-blue-900'}
                         >
                           {task.text}
                         </span>
