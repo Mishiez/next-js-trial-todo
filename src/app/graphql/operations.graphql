@@ -1,0 +1,82 @@
+# Queries
+query RetrieveProjects {
+  retrieveProjects {
+    id
+    name
+    status
+    creator {
+      id
+      email
+    }
+    dateDue
+  }
+}
+
+query RetrieveProjectTasks($projectId: Int!) {
+  retrieveProjectTasks(projectId: $projectId) {
+    id
+    name
+    description
+    dateDue
+    dateCompleted
+    project {
+      id
+    }
+    creator {
+      id
+      email
+    }
+  }
+}
+
+# Mutations
+mutation CreateProject($args: CreateProjectInput!) {
+  createProject(args: $args) {
+    id
+    name
+    dateDue
+  }
+}
+
+mutation CreateProjectTask($args: CreateProjectTaskInput!) {
+  createProjectTask(args: $args) {
+    id
+    name
+    description
+    dateDue
+    dateCompleted
+    project {
+      id
+    }
+  }
+}
+
+mutation UpdateProjectTask($args: UpdateProjectTaskInput!) {
+  updateProjectTask(args: $args) {
+    id
+    name
+    description
+    dateDue
+    dateCompleted
+    project {
+      id
+    }
+  }
+}
+
+mutation DeleteProjectTask($taskId: Int!) {
+  deleteProjectTask(taskId: $taskId)
+}
+
+mutation DeleteProject($projectId: Int!) {
+  deleteProject(projectId: $projectId)
+}
+
+mutation Login($email: String!, $password: String!) {
+  login(email: $email, password: $password) {
+    jwtToken
+    message
+  }
+}
+
+

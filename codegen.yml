@@ -1,0 +1,16 @@
+overwrite: true
+schema: "http://127.0.0.1:8000/graphql"
+documents: "src/**/*.graphql"
+generates:
+  lib/generated/graphql.tsx:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
+    config:
+      withHooks: true           # Enables React Apollo hooks like useQuery, useMutation
+      withHOC: false            # Disable HOCs (you likely don’t use them)
+      withComponent: false      # Disable class components (for cleaner TS projects)
+      scalars:
+        DateTime: string        # If you use custom scalars like DateTime
+        ID: string              # Ensure ID is treated as a string, matching backend
