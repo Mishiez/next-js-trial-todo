@@ -19,13 +19,13 @@ interface LoginProps {
 
 export default function Login({ onLogin }: LoginProps) {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [userPassword, setUserPassword] = useState('');
   const [login, { loading, error }] = useMutation(LOGIN);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data } = await login({ variables: { email, password } });
+      const { data } = await login({ variables: { email, userPassword } });
       console.log('Login response:', data); // Debug the full response
       const token = data?.login?.jwtToken;
       if (token) {
@@ -60,8 +60,8 @@ export default function Login({ onLogin }: LoginProps) {
           />
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={userPassword}
+            onChange={(e) => setUserPassword(e.target.value)}
             placeholder="Password"
             className="w-full p-2 mb-3 bg-orange-50 text-gray-800 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition duration-200"
             required
