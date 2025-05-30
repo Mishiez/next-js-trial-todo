@@ -8,7 +8,7 @@ import {
   useCreateProjectTaskMutation,
   useDeleteProjectTaskMutation,
   useDeleteProjectMutation,
-} from '../../../lib/generated/graphql';
+} from '@/lib/generated/graphql';
 
 interface Task {
   id: number;

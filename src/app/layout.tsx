@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import ApolloWrapper from './lib/ApolloWrapper';
+import ApolloWrapper from '@/lib/ApolloWrapper';
 import './globals.css';
 
 export const metadata: Metadata = {
