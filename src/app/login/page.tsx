@@ -1,16 +1,15 @@
+"use client";
 
-'use client';
-
-import { useState } from 'react';
-import { useMutation, gql } from '@apollo/client';
+import { useState } from "react";
+import { useMutation, gql } from "@apollo/client";
 
 const LOGIN = gql`
-    mutation Login($email: String!, $password: String!) {
-        login(email: $email, password: $password) {
-            jwtToken
-            message
-        }
+  mutation Login($email: String!, $password: String!) {
+    login(email: $email, password: $password) {
+      jwtToken
+      message
     }
+  }
 `;
 
 interface LoginProps {
@@ -18,26 +17,26 @@ interface LoginProps {
 }
 
 export default function Login({ onLogin }: LoginProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [pass, setPass] = useState("");
   const [login, { loading, error }] = useMutation(LOGIN);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data } = await login({ variables: { email, password } });
-      console.log('Login response:', data); // Debug the full response
+      const { data } = await login({ variables: { email, password: pass } });
+      console.log("Login response:", data); // Debug the full response
       const token = data?.login?.jwtToken;
       if (token) {
-        localStorage.setItem('token', token);
-        console.log('Token stored:', token); // Debug token storage
+        localStorage.setItem("token", token);
+        console.log("Token stored:", token); // Debug token storage
         if (onLogin) onLogin();
         window.location.reload();
       } else {
-        console.error('No token received, message:', data?.login?.message);
+        console.error("No token received, message:", data?.login?.message);
       }
     } catch (err) {
-      console.error('Login error:', err);
+      console.error("Login error:", err);
     }
   };
 
@@ -60,8 +59,8 @@ export default function Login({ onLogin }: LoginProps) {
           />
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={pass}
+            onChange={(e) => setPass(e.target.value)}
             placeholder="Password"
             className="w-full p-2 mb-3 bg-orange-50 text-gray-800 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition duration-200"
             required
@@ -71,12 +70,16 @@ export default function Login({ onLogin }: LoginProps) {
             type="submit"
             disabled={loading}
             className={`w-full py-2 rounded-lg text-white ${
-              loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-700'
+              loading
+                ? "bg-blue-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-700"
             } focus:outline-none focus:ring-2 focus:ring-orange-400 transition duration-200`}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? "Logging in..." : "Login"}
           </button>
-          {error && <p className="text-red-600 mt-2 text-sm">Error: {error.message}</p>}
+          {error && (
+            <p className="text-red-600 mt-2 text-sm">Error: {error.message}</p>
+          )}
         </form>
       </div>
     </div>
