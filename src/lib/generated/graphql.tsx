@@ -728,7 +728,7 @@ export type Project = {
 
 /**
  *
- * Project status
+ * Project statuses
  *
  */
 export enum ProjectStatus {
@@ -758,7 +758,7 @@ export type ProjectTask = {
 
 /**
  *
- * Project task status
+ * Project task statuses
  *
  */
 export enum ProjectTaskStatus {
