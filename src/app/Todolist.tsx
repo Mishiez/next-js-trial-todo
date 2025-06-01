@@ -9,6 +9,7 @@ import {
   useCreateProjectTaskMutation,
   useDeleteProjectTaskMutation,
   useDeleteProjectMutation,
+  useUpdateProjectMutation,
 } from "@/lib/generated/graphql";
 import {
   LoginForm,
@@ -25,6 +26,7 @@ export default function Todolist() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectIndex, setSelectedProjectIndex] = useState<number | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [backendWarning, setBackendWarning] = useState<string | null>(null); // For user feedback
   const { data: projectsData, refetch: refetchProjects } = useRetrieveProjectsQuery();
   const { data: tasksData, refetch: refetchTasks } = useRetrieveProjectTasksQuery({
     variables:
@@ -43,9 +45,10 @@ export default function Todolist() {
   const [createTaskMutation] = useCreateProjectTaskMutation();
   const [deleteTaskMutation] = useDeleteProjectTaskMutation();
   const [deleteProjectMutation] = useDeleteProjectMutation();
+  const [updateProjectMutation] = useUpdateProjectMutation();
 
   useEffect(() => {
-    const loginStatus = localStorage.getItem("loggedIn");
+    const loginStatus = typeof window !== "undefined" ? localStorage.getItem("loggedIn") : null;
     if (loginStatus === "true") {
       setIsLoggedIn(true);
     } else {
@@ -58,8 +61,10 @@ export default function Todolist() {
       const transformed = projectsData.retrieveProjects.map((p) => ({
         id: p.id,
         name: p.name,
+        status: p.status || "PENDING",
+        dateCompleted: p.dateCompleted || null,
         tasks: [],
-        completed: false,
+        completed: p.status === "COMPLETED" || p.dateCompleted != null,
       }));
       setProjects(transformed);
       if (
@@ -87,7 +92,7 @@ export default function Todolist() {
                   text: task.name || "",
                   description: task.description || "",
                   dateDue: task.dateDue || "",
-                  completed: task.dateCompleted != null, // Derive completed from dateCompleted
+                  completed: task.dateCompleted != null,
                 })),
             }
           : project
@@ -101,7 +106,9 @@ export default function Todolist() {
   };
 
   const logout = () => {
-    localStorage.removeItem("loggedIn");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("loggedIn");
+    }
     setIsLoggedIn(false);
     router.push("/login");
   };
@@ -132,12 +139,20 @@ export default function Todolist() {
       if (newProjectId) {
         setProjects([
           ...projects,
-          { id: newProjectId, name: data.newProjectName, tasks: [], completed: false },
+          {
+            id: newProjectId,
+            name: data.newProjectName,
+            status: "PENDING",
+            dateCompleted: null,
+            tasks: [],
+            completed: false,
+          },
         ]);
         await refetchProjects();
       }
     } catch (error) {
       console.error("Error creating project:", error);
+      setBackendWarning("Failed to create project due to a backend error.");
     }
   };
 
@@ -185,7 +200,7 @@ export default function Todolist() {
                     text: data.newTask,
                     description: data.description,
                     dateDue: data.dateDue,
-                    completed: false, // Initial state, will update via dateCompleted later
+                    completed: false,
                   },
                 ],
               }
@@ -196,6 +211,7 @@ export default function Todolist() {
       }
     } catch (error) {
       console.error("Error creating task:", error);
+      setBackendWarning("Failed to create task due to a backend error.");
     }
   };
 
@@ -213,11 +229,56 @@ export default function Todolist() {
     setProjects(updatedProjects);
   };
 
-  const toggleProjectCompletion = (projectIndex: number) => {
-    const updatedProjects = projects.map((project, pIndex) =>
-      pIndex === projectIndex ? { ...project, completed: !project.completed } : project
-    );
-    setProjects(updatedProjects);
+  const toggleProjectCompletion = async (projectIndex: number) => {
+    try {
+      const project = projects[projectIndex];
+      const newCompletedStatus = !project.completed;
+      const currentDate = new Date(); // Current time: 05:50 AM EAT, June 01, 2025
+      const formattedDateCompleted = `${currentDate.getFullYear()}-${String(
+        currentDate.getMonth() + 1
+      ).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")} ${String(
+        currentDate.getHours()
+      ).padStart(2, "0")}:${String(currentDate.getMinutes()).padStart(2, "0")}:${String(
+        currentDate.getSeconds()
+      ).padStart(2, "0")}.000000 +0300`;
+
+      // Encode the completion status and timestamp in the description field
+      const newDescription = newCompletedStatus
+        ? `COMPLETED:${formattedDateCompleted}`
+        : "ONGOING";
+
+      // Update the backend using the description field
+      await updateProjectMutation({
+        variables: {
+          args: {
+            projectId: project.id,
+            description: newDescription,
+          },
+        },
+      });
+
+      // Update the frontend state (optimistically, since backend won't update status/dateCompleted)
+      const updatedProjects = projects.map((project, pIndex) =>
+        pIndex === projectIndex
+          ? {
+              ...project,
+              completed: newCompletedStatus,
+            }
+          : project
+      );
+      setProjects(updatedProjects);
+
+      // Refetch projects to check if the backend updated status/dateCompleted
+      await refetchProjects();
+
+      // Warn the user that this is a workaround
+      setBackendWarning(
+        "Note: Project completion status is encoded in the description field due to backend limitations. This may not fully sync with the backend until the schema is updated."
+      );
+    } catch (error) {
+      console.error("Error updating project completion:", error);
+      setBackendWarning("Error updating project completion. Changes may not be saved to the backend.");
+    }
   };
 
   const deleteTask = async (projectIndex: number, taskIndex: number) => {
@@ -228,18 +289,27 @@ export default function Todolist() {
         await refetchProjects();
         return;
       }
-      await deleteTaskMutation({
+      console.log("Deleting task with ID:", task.id); // Log for debugging
+      const response = await deleteTaskMutation({
         variables: { taskId: task.id },
       });
-      const updatedProjects = projects.map((project, pIndex) =>
-        pIndex === projectIndex
-          ? { ...project, tasks: project.tasks.filter((_, tIndex) => tIndex !== taskIndex) }
-          : project
-      );
-      setProjects(updatedProjects);
-      await refetchTasks({ projectId: projects[projectIndex].id });
+      const success = response.data?.deleteProjectTask; // Check the boolean response
+      if (success) {
+        const updatedProjects = projects.map((project, pIndex) =>
+          pIndex === projectIndex
+            ? { ...project, tasks: project.tasks.filter((_, tIndex) => tIndex !== taskIndex) }
+            : project
+        );
+        setProjects(updatedProjects);
+        await refetchTasks({ projectId: projects[projectIndex].id });
+      } else {
+        setBackendWarning("Task deletion failed. The backend returned false.");
+      }
     } catch (error) {
       console.error("Error deleting task:", error);
+      // Type guard to safely access error.message
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      setBackendWarning(`Failed to delete task due to a backend error: ${errorMessage}`);
     }
   };
 
@@ -262,6 +332,8 @@ export default function Todolist() {
       await refetchProjects();
     } catch (error) {
       console.error("Error deleting project:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      setBackendWarning(`Failed to delete project due to a backend error: ${errorMessage}`);
     }
   };
 
@@ -272,6 +344,11 @@ export default function Todolist() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-orange-200 to-pink-300 flex flex-col items-center justify-center p-6">
       <Header onLogout={logout} />
+      {backendWarning && (
+        <div className="bg-yellow-200 text-yellow-800 p-4 rounded-lg mb-4 text-center">
+          {backendWarning}
+        </div>
+      )}
       <main className="w-full max-w-2xl bg-white rounded-3xl shadow-md p-8 border border-yellow-200 transition-shadow hover:shadow-lg">
         <h2 className="text-2xl font-bold text-blue-900 text-center mb-8">
           Your Projects & Tasks

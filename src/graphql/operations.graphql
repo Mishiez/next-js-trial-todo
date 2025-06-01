@@ -4,6 +4,7 @@ query RetrieveProjects {
     id
     name
     status
+    dateCompleted
     creator {
       id
       email
@@ -51,21 +52,25 @@ mutation CreateProjectTask($args: CreateProjectTaskInput!) {
   }
 }
 
-mutation UpdateProjectTask($args: UpdateProjectTaskInput!) {
-  updateProjectTask(args: $args) {
+mutation UpdateProject($args: UpdateProjectInput!) {
+  updateProject(args: $args) {
     id
     name
-    description
-    dateDue
+    status
     dateCompleted
-    project {
-      id
-    }
   }
 }
 
+input UpdateProjectInput {
+  projectId: Int!
+  name: String
+  description: String
+  dateDue: String
+}
+
 mutation DeleteProjectTask($taskId: Int!) {
-  deleteProjectTask(taskId: $taskId)
+  deleteProjectTask(taskId: $taskId)  # Add the return value
+  # Return type is Boolean!
 }
 
 mutation DeleteProject($projectId: Int!) {
@@ -78,5 +83,3 @@ mutation Login($email: String!, $password: String!) {
     message
   }
 }
-
-

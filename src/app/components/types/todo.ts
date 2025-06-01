@@ -21,6 +21,15 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 export type ProjectFormData = z.infer<typeof projectSchema>;
 export type TaskFormData = z.infer<typeof taskSchema>;
 
+export interface Project {
+  id: number;
+  name: string;
+  status: string; // Maps to ProjectStatus (PENDING, ONGOING, ARCHIVED, COMPLETED)
+  dateCompleted: string | null; // Timestamp when completed, or null if not completed
+  tasks: Task[];
+  completed: boolean; // Derived from status or dateCompleted
+}
+
 export interface Task {
   id: number;
   text: string;
@@ -29,9 +38,3 @@ export interface Task {
   completed: boolean;
 }
 
-export interface Project {
-  id: number;
-  name: string;
-  tasks: Task[];
-  completed: boolean;
-}

@@ -39,22 +39,30 @@ export default function ProjectList({
         >
           <div className="flex flex-col items-center justify-between mb-4 gap-2">
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={project.completed}
-                onChange={(e) => {
+              {/* Wrap checkbox and label in a container to prevent navigation */}
+              <div
+                onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
-                  onToggleProjectCompletion(pIndex);
                 }}
-                className="h-5 w-5 accent-green-600 border-yellow-200 rounded"
-              />
-              <h3
-                className={`text-xl font-semibold ${
-                  project.completed ? "text-gray-400 line-through" : "text-black"
-                }`}
               >
-                {project.name}
-              </h3>
+                <input
+                  type="checkbox"
+                  checked={project.completed}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    onToggleProjectCompletion(pIndex);
+                  }}
+                  className="h-5 w-5 accent-green-600 border-yellow-200 rounded"
+                />
+                <label
+                  className={`text-xl font-semibold ${
+                    project.completed ? "text-gray-400 line-through" : "text-black"
+                  }`}
+                >
+                  {project.name}
+                </label>
+              </div>
             </div>
             <button
               onClick={(e) => {
