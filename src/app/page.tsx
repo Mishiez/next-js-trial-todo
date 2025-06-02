@@ -13,8 +13,8 @@ export default function Home() {
 'use client';
 
 import { useState, useEffect } from 'react';
-import Login from '@/components/Login';
-import TodoList from '@/components/Todolist';
+import Login from '@/app/components/Login';
+import TodoList from '@/app/Todolist';
 
 // Force client-side rendering
 export const dynamic = 'force-dynamic';

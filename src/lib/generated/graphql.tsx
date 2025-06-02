@@ -728,7 +728,7 @@ export type Project = {
 
 /**
  *
- * Project status
+ * Project statuses
  *
  */
 export enum ProjectStatus {
@@ -758,7 +758,7 @@ export type ProjectTask = {
 
 /**
  *
- * Project task status
+ * Project task statuses
  *
  */
 export enum ProjectTaskStatus {
@@ -1118,7 +1118,7 @@ export enum UserPermission {
 export type RetrieveProjectsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type RetrieveProjectsQuery = { __typename?: 'Query', retrieveProjects: Array<{ __typename?: 'Project', id: number, name: string, status: ProjectStatus, dateDue?: string | null, creator?: { __typename?: 'User', id: number, email: string } | null }> };
+export type RetrieveProjectsQuery = { __typename?: 'Query', retrieveProjects: Array<{ __typename?: 'Project', id: number, name: string, status: ProjectStatus, dateCompleted?: string | null, dateDue?: string | null, creator?: { __typename?: 'User', id: number, email: string } | null }> };
 
 export type RetrieveProjectTasksQueryVariables = Exact<{
   projectId: Scalars['Int']['input'];
@@ -1141,12 +1141,12 @@ export type CreateProjectTaskMutationVariables = Exact<{
 
 export type CreateProjectTaskMutation = { __typename?: 'Mutation', createProjectTask: { __typename?: 'ProjectTask', id: number, name: string, description: string, dateDue?: string | null, dateCompleted?: string | null, project?: { __typename?: 'Project', id: number } | null } };
 
-export type UpdateProjectTaskMutationVariables = Exact<{
-  args: UpdateProjectTaskInput;
+export type UpdateProjectMutationVariables = Exact<{
+  args: UpdateProjectInput;
 }>;
 
 
-export type UpdateProjectTaskMutation = { __typename?: 'Mutation', updateProjectTask: { __typename?: 'ProjectTask', id: number, name: string, description: string, dateDue?: string | null, dateCompleted?: string | null, project?: { __typename?: 'Project', id: number } | null } };
+export type UpdateProjectMutation = { __typename?: 'Mutation', updateProject: { __typename?: 'Project', id: number, name: string, status: ProjectStatus, dateCompleted?: string | null } };
 
 export type DeleteProjectTaskMutationVariables = Exact<{
   taskId: Scalars['Int']['input'];
@@ -1177,6 +1177,7 @@ export const RetrieveProjectsDocument = gql`
     id
     name
     status
+    dateCompleted
     creator {
       id
       email
@@ -1343,46 +1344,42 @@ export function useCreateProjectTaskMutation(baseOptions?: Apollo.MutationHookOp
 export type CreateProjectTaskMutationHookResult = ReturnType<typeof useCreateProjectTaskMutation>;
 export type CreateProjectTaskMutationResult = Apollo.MutationResult<CreateProjectTaskMutation>;
 export type CreateProjectTaskMutationOptions = Apollo.BaseMutationOptions<CreateProjectTaskMutation, CreateProjectTaskMutationVariables>;
-export const UpdateProjectTaskDocument = gql`
-    mutation UpdateProjectTask($args: UpdateProjectTaskInput!) {
-  updateProjectTask(args: $args) {
+export const UpdateProjectDocument = gql`
+    mutation UpdateProject($args: UpdateProjectInput!) {
+  updateProject(args: $args) {
     id
     name
-    description
-    dateDue
+    status
     dateCompleted
-    project {
-      id
-    }
   }
 }
     `;
-export type UpdateProjectTaskMutationFn = Apollo.MutationFunction<UpdateProjectTaskMutation, UpdateProjectTaskMutationVariables>;
+export type UpdateProjectMutationFn = Apollo.MutationFunction<UpdateProjectMutation, UpdateProjectMutationVariables>;
 
 /**
- * __useUpdateProjectTaskMutation__
+ * __useUpdateProjectMutation__
  *
- * To run a mutation, you first call `useUpdateProjectTaskMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUpdateProjectTaskMutation` returns a tuple that includes:
+ * To run a mutation, you first call `useUpdateProjectMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateProjectMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [updateProjectTaskMutation, { data, loading, error }] = useUpdateProjectTaskMutation({
+ * const [updateProjectMutation, { data, loading, error }] = useUpdateProjectMutation({
  *   variables: {
  *      args: // value for 'args'
  *   },
  * });
  */
-export function useUpdateProjectTaskMutation(baseOptions?: Apollo.MutationHookOptions<UpdateProjectTaskMutation, UpdateProjectTaskMutationVariables>) {
+export function useUpdateProjectMutation(baseOptions?: Apollo.MutationHookOptions<UpdateProjectMutation, UpdateProjectMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<UpdateProjectTaskMutation, UpdateProjectTaskMutationVariables>(UpdateProjectTaskDocument, options);
+        return Apollo.useMutation<UpdateProjectMutation, UpdateProjectMutationVariables>(UpdateProjectDocument, options);
       }
-export type UpdateProjectTaskMutationHookResult = ReturnType<typeof useUpdateProjectTaskMutation>;
-export type UpdateProjectTaskMutationResult = Apollo.MutationResult<UpdateProjectTaskMutation>;
-export type UpdateProjectTaskMutationOptions = Apollo.BaseMutationOptions<UpdateProjectTaskMutation, UpdateProjectTaskMutationVariables>;
+export type UpdateProjectMutationHookResult = ReturnType<typeof useUpdateProjectMutation>;
+export type UpdateProjectMutationResult = Apollo.MutationResult<UpdateProjectMutation>;
+export type UpdateProjectMutationOptions = Apollo.BaseMutationOptions<UpdateProjectMutation, UpdateProjectMutationVariables>;
 export const DeleteProjectTaskDocument = gql`
     mutation DeleteProjectTask($taskId: Int!) {
   deleteProjectTask(taskId: $taskId)
