@@ -6,9 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useStorage } from "./Storage";
-import Project from "./Project";
 import Task from "./Task";
 import { projectSchema, taskSchema } from "@/types/todo";
+import { useRetrieveProjectsQuery } from "@/lib/generated/graphql";
 
 // Define form schemas
 const addProjectSchema = projectSchema;
@@ -26,6 +26,11 @@ export default function UI({ onLogout }: UIProps) {
   const [isNavOpen, setIsNavOpen] = useState<boolean>(false);
   const { todoList, createProject, createTask, deleteProject, deleteTask, renameTask, setTaskDate, updateTodayProject, updateWeekProject } = useStorage();
 
+  // Fetch projects from backend
+  const { data: projectsData, error: projectsError, refetch } = useRetrieveProjectsQuery({ 
+    pollInterval: 5000 // Poll every 5 seconds to keep data fresh
+  });
+
   const { register: registerProject, handleSubmit: handleSubmitProject, reset: resetProject, formState: { errors: projectErrors } } = useForm<AddProjectFormData>({
     resolver: zodResolver(addProjectSchema),
   });
@@ -38,6 +43,49 @@ export default function UI({ onLogout }: UIProps) {
   const [isAddTaskPopupOpen, setIsAddTaskPopupOpen] = useState<boolean>(false);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editingDueDate, setEditingDueDate] = useState<string | null>(null);
+
+  // Sync backend data with frontend todoList
+  useEffect(() => {
+    if (projectsData?.retrieveProjects) {
+      // Clear existing projects first (except default ones)
+      const existingProjects = todoList.getProjects();
+      existingProjects.forEach(project => {
+        const projectName = project.getName();
+        if (!["Inbox", "Today", "This Week"].includes(projectName)) {
+          todoList.deleteProject(projectName);
+        }
+      });
+
+      // Add projects from backend
+      projectsData.retrieveProjects.forEach(backendProject => {
+        if (backendProject.name && !["Inbox", "Today", "This Week"].includes(backendProject.name)) {
+          // Check if project already exists
+          if (!todoList.contains(backendProject.name)) {
+            const newProject = new (require('./Project').default)(backendProject.name);
+            newProject.id = backendProject.id?.toString();
+            todoList.addProject(newProject);
+
+            // Add tasks for this project
+            if (backendProject.tasks) {
+              backendProject.tasks.forEach(backendTask => {
+                if (backendTask.name) {
+                  const newTask = new Task(
+                    backendTask.name, 
+                    backendTask.dateDue ? format(new Date(backendTask.dateDue), "dd/MM/yyyy") : "No date"
+                  );
+                  newTask.id = backendTask.id?.toString();
+                  newProject.addTask(newTask);
+                }
+              });
+            }
+          }
+        }
+      });
+
+      // Force re-render by updating state
+      setActiveProject(prev => prev);
+    }
+  }, [projectsData, todoList]);
 
   useEffect(() => {
     const handleKeyboardInput = (e: KeyboardEvent) => {
@@ -66,9 +114,16 @@ export default function UI({ onLogout }: UIProps) {
       alert("Project names must be different");
       return;
     }
-    await createProject(data.newProjectName);
-    resetProject();
-    setIsAddProjectPopupOpen(false);
+    try {
+      await createProject(data.newProjectName);
+      resetProject();
+      setIsAddProjectPopupOpen(false);
+      // Refetch data to update UI
+      await refetch();
+    } catch (error) {
+      console.error("Error creating project:", error);
+      alert("Failed to create project. Please try again.");
+    }
   };
 
   const handleAddTask = async (data: AddTaskFormData) => {
@@ -76,30 +131,65 @@ export default function UI({ onLogout }: UIProps) {
       alert("Task names must be different");
       return;
     }
-    await createTask(activeProject, new Task(data.newTask, data.dateDue || "No date"));
-    resetTask();
-    setIsAddTaskPopupOpen(false);
+    try {
+      await createTask(activeProject, new Task(data.newTask, data.dateDue || "No date"));
+      resetTask();
+      setIsAddTaskPopupOpen(false);
+      // Refetch data to update UI
+      await refetch();
+    } catch (error) {
+      console.error("Error creating task:", error);
+      alert("Failed to create task. Please try again.");
+    }
   };
 
-  const handleDeleteProject = (projectName: string) => {
-    if (activeProject === projectName) setActiveProject("Inbox");
-    deleteProject(projectName);
+  const handleDeleteProject = async (projectName: string) => {
+    try {
+      if (activeProject === projectName) setActiveProject("Inbox");
+      await deleteProject(projectName);
+      // Refetch data to update UI
+      await refetch();
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      alert("Failed to delete project. Please try again.");
+    }
   };
 
-  const handleDeleteTask = (taskName: string) => {
-    deleteTask(activeProject, taskName);
+  const handleDeleteTask = async (taskName: string) => {
+    try {
+      await deleteTask(activeProject, taskName);
+      // Refetch data to update UI
+      await refetch();
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      alert("Failed to delete task. Please try again.");
+    }
   };
 
-  const handleRenameTask = (taskName: string, newTaskName: string) => {
+  const handleRenameTask = async (taskName: string, newTaskName: string) => {
     if (newTaskName && newTaskName !== taskName) {
-      renameTask(activeProject, taskName, newTaskName);
+      try {
+        await renameTask(activeProject, taskName, newTaskName);
+        // Refetch data to update UI
+        await refetch();
+      } catch (error) {
+        console.error("Error renaming task:", error);
+        alert("Failed to rename task. Please try again.");
+      }
     }
     setEditingTask(null);
   };
 
-  const handleSetTaskDate = (taskName: string, newDueDate: string) => {
-    setTaskDate(activeProject, taskName, format(new Date(newDueDate), "dd/MM/yyyy"));
-    setEditingDueDate(null);
+  const handleSetTaskDate = async (taskName: string, newDueDate: string) => {
+    try {
+      await setTaskDate(activeProject, taskName, format(new Date(newDueDate), "dd/MM/yyyy"));
+      setEditingDueDate(null);
+      // Refetch data to update UI
+      await refetch();
+    } catch (error) {
+      console.error("Error setting task date:", error);
+      alert("Failed to update task date. Please try again.");
+    }
   };
 
   const openTodayTasks = () => {
@@ -111,6 +201,24 @@ export default function UI({ onLogout }: UIProps) {
     updateWeekProject();
     openProject("This Week");
   };
+
+  // Show loading state
+  if (projectsError) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Projects</h2>
+          <p className="text-gray-600 mb-4">Failed to load projects from the server.</p>
+          <button 
+            onClick={() => refetch()} 
+            className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -190,7 +298,8 @@ export default function UI({ onLogout }: UIProps) {
                 id="input-add-project-popup"
                 type="text"
                 {...registerProject("newProjectName")}
-                className="w-full p-2 rounded border border-gray-300"
+                className="w-full p-2 rounded border border-gray-300 text-black"
+                placeholder="Enter project name"
               />
               {projectErrors.newProjectName && (
                 <p className="text-red-400 text-sm">{projectErrors.newProjectName.message}</p>
@@ -291,6 +400,7 @@ export default function UI({ onLogout }: UIProps) {
                     type="text"
                     {...registerTask("newTask")}
                     className="w-full p-2 rounded border border-gray-300"
+                    placeholder="Enter task name"
                   />
                   {taskErrors.newTask && (
                     <p className="text-red-400 text-sm">{taskErrors.newTask.message}</p>

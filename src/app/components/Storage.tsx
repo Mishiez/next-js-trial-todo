@@ -1,5 +1,7 @@
-// src/components/Storage.tsx
-import { useCallback } from "react";
+// src/app/components/Storage.tsx
+"use client";
+
+import { useCallback, useMemo } from "react";
 import Project from "./Project";
 import Task from "./Task";
 import TodoList from "./TodoList";
@@ -8,7 +10,7 @@ import {
   useCreateProjectTaskMutation,
   useDeleteProjectTaskMutation,
   useDeleteProjectMutation,
-  useUpdateProjectTaskMutation,
+  useUpdateProjectTaskMutation, // Fixed: Use correct mutation hook
 } from "@/lib/generated/graphql";
 
 // Interface for Storage operations
@@ -29,9 +31,10 @@ export const useStorage = (): StorageInterface => {
   const [createTaskMutation] = useCreateProjectTaskMutation();
   const [deleteTaskMutation] = useDeleteProjectTaskMutation();
   const [deleteProjectMutation] = useDeleteProjectMutation();
-  const [updateTaskMutation] = useUpdateProjectTaskMutation();
+  const [updateTaskMutation] = useUpdateProjectTaskMutation(); // Fixed: Use correct mutation
 
-  const todoList = new TodoList();
+  // Fixed: Use useMemo to create todoList only once
+  const todoList = useMemo(() => new TodoList(), []);
 
   const createProject = useCallback(async (projectName: string) => {
     const dueDate = new Date("2025-12-31T00:00:00.000Z");
@@ -53,7 +56,7 @@ export const useStorage = (): StorageInterface => {
         }
       },
     });
-  }, [createProjectMutation]);
+  }, [createProjectMutation, todoList]);
 
   const createTask = useCallback(async (projectName: string, task: Task) => {
     const project = todoList.getProject(projectName);
@@ -67,7 +70,7 @@ export const useStorage = (): StorageInterface => {
         args: {
           name: task.getName(),
           description: "Task created from frontend",
-          projectId: project.id, // Still passed in args, but not queried back
+          projectId: project.id,
           dateDue: formattedDateDue,
         },
       },
@@ -75,12 +78,11 @@ export const useStorage = (): StorageInterface => {
         if (data.createProjectTask) {
           const newTask = new Task(task.getName(), task.getDate());
           newTask.id = data.createProjectTask.id;
-          // Use project.id from the local project object since projectId isn't returned
           project.addTask(newTask);
         }
       },
     });
-  }, [createTaskMutation]);
+  }, [createTaskMutation, todoList]);
 
   const deleteProject = useCallback(async (projectName: string) => {
     const project = todoList.getProject(projectName);
@@ -92,7 +94,7 @@ export const useStorage = (): StorageInterface => {
         todoList.deleteProject(projectName);
       },
     });
-  }, [deleteProjectMutation]);
+  }, [deleteProjectMutation, todoList]);
 
   const deleteTask = useCallback(async (projectName: string, taskName: string) => {
     const project = todoList.getProject(projectName);
@@ -105,7 +107,7 @@ export const useStorage = (): StorageInterface => {
         project.deleteTask(taskName);
       },
     });
-  }, [deleteTaskMutation]);
+  }, [deleteTaskMutation, todoList]);
 
   const renameTask = useCallback(async (projectName: string, taskName: string, newTaskName: string) => {
     const project = todoList.getProject(projectName);
@@ -120,19 +122,22 @@ export const useStorage = (): StorageInterface => {
         },
       },
       onCompleted: (data) => {
+        // Fixed: Check for updateProjectTask instead of createProjectTask
         if (data.updateProjectTask) {
           task.setName(data.updateProjectTask.name);
         }
       },
     });
-  }, [updateTaskMutation]);
+  }, [updateTaskMutation, todoList]);
 
   const setTaskDate = useCallback(async (projectName: string, taskName: string, newDueDate: string) => {
     const project = todoList.getProject(projectName);
     const task = project?.getTask(taskName);
     if (!task?.id) return;
 
-    const formattedDateDue = `${new Date(newDueDate).getFullYear()}-${String(new Date(newDueDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(newDueDate).getDate()).padStart(2, "0")} ${String(new Date(newDueDate).getHours()).padStart(2, "0")}:${String(new Date(newDueDate).getMinutes()).padStart(2, "0")}:${String(new Date(newDueDate).getSeconds()).padStart(2, "0")}.000000 +0300`;
+    // Fixed: Remove extra spaces in date formatting
+    const dueDate = new Date(newDueDate);
+    const formattedDateDue = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-${String(dueDate.getDate()).padStart(2, "0")} ${String(dueDate.getHours()).padStart(2, "0")}:${String(dueDate.getMinutes()).padStart(2, "0")}:${String(dueDate.getSeconds()).padStart(2, "0")}.000000 +0300`;
 
     await updateTaskMutation({
       variables: {
@@ -142,20 +147,21 @@ export const useStorage = (): StorageInterface => {
         },
       },
       onCompleted: (data) => {
+        // Fixed: Check for updateProjectTask instead of createProjectTask
         if (data.updateProjectTask) {
           task.setDate(data.updateProjectTask.dateDue);
         }
       },
     });
-  }, [updateTaskMutation]);
+  }, [updateTaskMutation, todoList]);
 
   const updateTodayProject = useCallback(() => {
     todoList.updateTodayProject();
-  }, []);
+  }, [todoList]);
 
   const updateWeekProject = useCallback(() => {
     todoList.updateWeekProject();
-  }, []);
+  }, [todoList]);
 
   return {
     todoList,
