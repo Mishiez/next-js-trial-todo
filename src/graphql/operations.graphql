@@ -1,85 +1,55 @@
-# Queries
-query RetrieveProjects {
-  retrieveProjects {
-    id
-    name
-    status
-    dateCompleted
-    creator {
-      id
-      email
-    }
-    dateDue
-  }
-}
+# src/operations.graphql
 
-query RetrieveProjectTasks($projectId: Int!) {
-  retrieveProjectTasks(projectId: $projectId) {
+# Query to retrieve projects
+query retrieveProjects {
+  retrieveProjects {
     id
     name
     description
     dateDue
-    dateCompleted
-    project {
-      id
-    }
-    creator {
-      id
-      email
-    }
   }
 }
 
-# Mutations
-mutation CreateProject($args: CreateProjectInput!) {
+
+
+# Mutation to create a project
+mutation createProject($args: CreateProjectInput!) {
   createProject(args: $args) {
     id
     name
+    description
     dateDue
   }
 }
 
-mutation CreateProjectTask($args: CreateProjectTaskInput!) {
+# Mutation to create a task
+mutation createProjectTask($args: CreateProjectTaskInput!) {
   createProjectTask(args: $args) {
     id
     name
     description
-    dateDue
-    dateCompleted
-    project {
-      id
+    project { # Changed from projectId to project
+      id # Query the project's id
     }
+    dateDue
   }
 }
 
-mutation UpdateProject($args: UpdateProjectInput!) {
-  updateProject(args: $args) {
-    id
-    name
-    status
-    dateCompleted
-  }
-}
-
-input UpdateProjectInput {
-  projectId: Int!
-  name: String
-  description: String
-  dateDue: String
-}
-
-mutation DeleteProjectTask($taskId: Int!) {
-  deleteProjectTask(taskId: $taskId)  # Add the return value
-  # Return type is Boolean!
-}
-
-mutation DeleteProject($projectId: Int!) {
+# Mutation to delete a project
+mutation deleteProject($projectId: Int!) {
   deleteProject(projectId: $projectId)
 }
 
-mutation Login($email: String!, $password: String!) {
-  login(email: $email, password: $password) {
-    jwtToken
-    message
+# Mutation to delete a task
+mutation deleteProjectTask($taskId: Int!) {
+  deleteProjectTask(taskId: $taskId)
+}
+
+# Mutation to update a task's details
+mutation updateProjectTask($args: UpdateProjectTaskInput!) {
+  updateProjectTask(args: $args) {
+    id
+    name
+    dateDue
   }
 }
