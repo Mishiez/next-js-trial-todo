@@ -80,26 +80,30 @@ export default function Todolist() {
   }, [projectsData, refetchTasks, selectedProjectIndex]);
 
   useEffect(() => {
-    if (tasksData?.retrieveProjectTasks && selectedProjectIndex !== null) {
+  if (tasksData?.retrieveProjectTasks && selectedProjectIndex !== null) {
+    const newTasks = tasksData.retrieveProjectTasks
+      .filter((task) => task.project?.id === projects[selectedProjectIndex].id)
+      .map((task) => ({
+        id: task.id,
+        text: task.name || "",
+        description: task.description || "",
+        dateDue: task.dateDue || "",
+        completed: task.dateCompleted != null,
+      }));
+
+    const currentTasks = projects[selectedProjectIndex]?.tasks || [];
+    const tasksChanged = JSON.stringify(newTasks) !== JSON.stringify(currentTasks);
+
+    if (tasksChanged) {
       const updatedProjects = projects.map((project, index) =>
         index === selectedProjectIndex
-          ? {
-              ...project,
-              tasks: tasksData.retrieveProjectTasks
-                .filter((task) => task.project?.id === project.id)
-                .map((task) => ({
-                  id: task.id,
-                  text: task.name || "",
-                  description: task.description || "",
-                  dateDue: task.dateDue || "",
-                  completed: task.dateCompleted != null,
-                })),
-            }
+          ? { ...project, tasks: newTasks }
           : project
       );
       setProjects(updatedProjects);
     }
-  }, [tasksData, selectedProjectIndex, projects]);
+  }
+}, [tasksData, selectedProjectIndex, projects]);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
